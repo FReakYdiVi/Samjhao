@@ -1,36 +1,284 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+  <img src="src/app/icon.svg" alt="Samjhao logo" width="76" height="76" />
 
-## Getting Started
+  <h1>Samjhao</h1>
 
-First, run the development server:
+  <p><strong>An India-first, source-grounded study notebook for Hindi, Hinglish, and English learners.</strong></p>
+
+  <p>
+    Ask from your own PDFs, retrieve the most relevant evidence, and get answers that stay tied to the material instead of drifting into generic chat.
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square" alt="Next.js 16" />
+    <img src="https://img.shields.io/badge/React-19-149ECA?style=flat-square" alt="React 19" />
+    <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square" alt="TypeScript 5" />
+    <img src="https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square" alt="Tailwind v4" />
+    <img src="https://img.shields.io/badge/SQLite-better--sqlite3-0F6AB4?style=flat-square" alt="SQLite" />
+    <img src="https://img.shields.io/badge/Sarvam-multilingual-orange?style=flat-square" alt="Sarvam" />
+  </p>
+
+  <p>
+    <a href="#quick-start">Quick Start</a>
+    ·
+    <a href="#why-samjhao">Why Samjhao</a>
+    ·
+    <a href="#how-it-works">How It Works</a>
+    ·
+    <a href="#retrieval-system">Retrieval System</a>
+    ·
+    <a href="#project-structure">Project Structure</a>
+  </p>
+</div>
+
+---
+
+![Samjhao workspace](public/samjhao-workspace.png)
+
+## Why Samjhao
+
+Most study assistants assume clean English input, clean digital documents, and a user who asks questions in the same language as the source.
+
+That is not how learning usually works for many Indian students.
+
+Samjhao is built for a more realistic flow:
+
+- the source might be a scanned or OCR-heavy PDF
+- the learner may ask in Hindi, Hinglish, or English
+- the answer still needs to stay faithful to the original material
+- the experience should feel like a study workspace, not a generic chatbot
+
+## What Makes It Different
+
+| Capability | Samjhao | Generic AI chat |
+| --- | --- | --- |
+| Answers grounded in uploaded PDFs | Yes | Often inconsistent |
+| Hindi / Hinglish answer modes | First-class | Usually secondary |
+| OCR-aware document ingestion | Yes | Usually external |
+| Retrieval over contextualized chunks | Yes | Rare |
+| Inline source snippets and citations | Yes | Inconsistent |
+| Voice input and playback | Yes | Usually fragmented |
+| Local workspace persistence | Yes | Often session-only |
+
+## Core Features
+
+- PDF-first source ingestion with built-in demo notes
+- OCR and markdown extraction through Sarvam document intelligence
+- Section-aware chunking for uploaded study material
+- Contextualized chunk storage for stronger retrieval
+- Hybrid retrieval using lexical search plus optional embeddings
+- Grounded tutoring in Hinglish, Hindi, or English
+- Roman transliteration support for Hinglish learners
+- Speech-to-text for asking by voice
+- Text-to-speech for listening to answers back
+- SQLite-backed document, chunk, and chat-session persistence
+
+## How It Works
+
+Samjhao has two main pipelines: document ingestion and question answering.
+
+### 1. Document Ingestion
+
+When a learner uploads a PDF, Samjhao:
+
+1. saves the file locally
+2. extracts markdown from the PDF
+3. cleans repeated OCR noise, headers, junk lines, and structural artifacts
+4. derives section-aware chunks from the cleaned text
+5. adds chunk-level retrieval context
+6. optionally creates embeddings for each chunk
+7. stores the document, chunks, and metadata in SQLite
+
+This means the app does not retrieve directly from raw OCR output. It retrieves from cleaned, sectioned, retrieval-ready study material.
+
+### 2. Question Answering
+
+When a learner asks a question, Samjhao:
+
+1. creates a retrieval plan from the question
+2. generates weighted query variants
+3. runs text-based retrieval across the stored chunks
+4. runs vector search if embeddings are configured
+5. merges and reranks the candidate chunks
+6. sends the best grounded context to the tutor model
+7. returns a structured answer with source snippets, citations, and follow-up questions
+
+## Retrieval System
+
+The retriever is one of the most important parts of the project.
+
+### Query Planning
+
+Before retrieval, Samjhao classifies the question and expands it into several search-friendly variants. It extracts:
+
+- question type such as definition, comparison, explanation, or factoid
+- focus terms and focus phrase
+- concept groups for comparison-style queries
+- multiple weighted search variants
+
+If the Sarvam client is available, the planner can generate model-assisted search queries. Otherwise, it falls back to heuristics.
+
+### Hybrid Search
+
+Samjhao combines:
+
+- BM25-style text retrieval
+- lexical matching against contextualized chunk content
+- section-title and summary-aware matching
+- vector similarity when embeddings are configured
+
+Embeddings are optional. The system still works without them.
+
+### Reranking
+
+After candidate retrieval, Samjhao reranks chunks with domain-specific heuristics that help with messy study notes:
+
+- sentence-level match scoring
+- phrase and concept coverage
+- section-title specificity boosts
+- definition-style boosts
+- penalties for boilerplate chapter text
+- penalties for OCR junk and visual-only noise
+- diversity selection to avoid near-duplicate chunks
+
+### Retrieval Modes
+
+Depending on configuration, the API returns one of two retrieval modes:
+
+- `hybrid-contextual-bm25`
+- `hybrid-contextual-bm25-embedding`
+
+## Tutor Response Design
+
+The final answer is not a plain text dump.
+
+Samjhao asks the tutor model to return a structured payload that includes:
+
+- `answer`
+- `sourceSnippets`
+- `suggestedFollowups`
+- `confidence`
+- `audioText`
+
+This keeps the UI grounded, easier to render, and ready for both reading and playback.
+
+## Tech Stack
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui
+- better-sqlite3
+- Sarvam JavaScript SDK
+
+## Quick Start
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Create local env
+
+```bash
+cp .env.example .env.local
+```
+
+### 3. Add your API keys
+
+Minimum setup:
+
+```bash
+SARVAM_API_KEY=your_key_here
+```
+
+Optional embeddings with Google:
+
+```bash
+GOOGLE_API_KEY=your_key_here
+EMBEDDINGS_PROVIDER=google
+EMBEDDINGS_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+EMBEDDINGS_MODEL=gemini-embedding-001
+EMBEDDINGS_DIMENSIONS=
+```
+
+Optional embeddings with an OpenAI-compatible provider:
+
+```bash
+OPENAI_API_KEY=your_key_here
+EMBEDDINGS_PROVIDER=openai
+EMBEDDINGS_BASE_URL=https://api.openai.com/v1
+EMBEDDINGS_MODEL=text-embedding-3-small
+```
+
+### 4. Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Verify the project
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+```
 
-## Learn More
+## Demo Flow
 
-To learn more about Next.js, take a look at the following resources:
+For the cleanest walkthrough:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. open `/`
+2. complete the onboarding form
+3. continue into `/workspace`
+4. load the built-in demo notes or upload a PDF
+5. ask a question in Hindi, Hinglish, or English
+6. inspect the grounded answer and source snippets
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```text
+src/
+  app/
+    api/
+    demo/
+    workspace/
+  components/
+    chat/
+    landing/
+    shared/
+    tutor/
+    upload/
+    ui/
+  lib/
+    db/
+    retrieval/
+    sarvam/
+    tutor/
+    utils/
+data/
+  extracted/
+  uploads/
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Current Product Shape
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- the landing and onboarding flow lives at `/`
+- the main notebook workspace lives at `/workspace`
+- uploads are currently PDF-first
+- the app keeps up to 3 active documents
+- chat sessions are tied to a selected source
+- answers are grounded to retrieved chunks from that source
+
+## Where This Can Grow
+
+- stronger document previews and section inspection
+- richer citation rendering
+- more retrieval diagnostics in the UI
+- broader source support beyond PDFs
+- deeper learner-personalization flows
+
