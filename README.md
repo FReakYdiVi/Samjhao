@@ -103,9 +103,120 @@ When a learner asks a question, Samjhao:
 6. sends the best grounded context to the tutor model
 7. returns a structured answer with source snippets, citations, and follow-up questions
 
+## Workflow 1: End-to-End Samjhao Pipeline
+
+This is the full product flow, including where each Sarvam capability fits.
+
+```mermaid
+flowchart LR
+    A[User enters workspace] --> B{Input type}
+
+    B -->|PDF upload| C[Sarvam Vision<br/>document intelligence]
+    C --> D[Clean markdown<br/>remove OCR noise]
+    D --> E[Derive sections and chunks]
+    E --> F[Sarvam-30B<br/>chunk contextualization]
+    F --> G[Optional embeddings<br/>Google or OpenAI-compatible]
+    G --> H[Store documents, chunks,<br/>embeddings, and sessions in SQLite]
+
+    B -->|Voice question| I[Saaras v3<br/>speech-to-text]
+    I --> J[Transcript + learner profile]
+
+    B -->|Typed question| J
+    H --> K[Question arrives]
+    J --> K
+
+    K --> L[Sarvam-30B<br/>query planner]
+    L --> M[Hybrid retrieval over<br/>stored contextualized chunks]
+    M --> N[Sarvam-30B<br/>grounded tutor answer]
+    N --> O{Language shaping needed?}
+
+    O -->|Hindi or Hinglish compliance| P[Mayura v1<br/>translation / localization]
+    O -->|Roman output for Hinglish| Q[Sarvam transliteration API]
+    O -->|Speech playback| R[Bulbul v3<br/>text-to-speech]
+
+    P --> S[Final structured response]
+    Q --> S
+    R --> S
+    N --> S
+
+    S --> T[UI shows answer,<br/>citations, snippets, follow-ups]
+```
+
+### Sarvam Usage by Step
+
+| Stage | What Samjhao does | Sarvam capability used |
+| --- | --- | --- |
+| Document extraction | Converts uploaded PDFs into markdown | `documentIntelligence` via Sarvam Vision |
+| Chunk contextualization | Adds a short retrieval-oriented prefix to each chunk | `sarvam-30b` |
+| Query planning | Expands the learner question into search-friendly variants | `sarvam-30b` |
+| Final answer generation | Produces the grounded tutoring response | `sarvam-30b` |
+| Voice input | Transcribes learner audio questions | `saaras:v3` |
+| Language compliance | Forces Hindi or Hinglish output when needed | `mayura:v1` |
+| Roman transliteration | Converts Devanagari into Roman script for Hinglish mode | Sarvam transliteration API |
+| Voice playback | Reads the answer aloud | `bulbul:v3` |
+
+### Sarvam Responsibility Split
+
+- `Sarvam Vision` handles PDF extraction and OCR-heavy document understanding.
+- `sarvam-30b` is used twice: once to improve retrieval queries and once to produce the final grounded answer.
+- `saaras:v3` handles code-mixed speech transcription for learner voice queries.
+- `mayura:v1` is used as a recovery layer when the answer needs stricter Hindi or Hinglish localization.
+- `Bulbul v3` turns the final tutor answer into playable audio.
+- Sarvam transliteration is applied when the learner wants Roman-script Hinglish output.
+
 ## Retrieval System
 
 The retriever is one of the most important parts of the project.
+
+## Workflow 2: Retrieval System
+
+This is the internal retrieval pipeline that turns a learner question into the grounded context used by the tutor.
+
+```mermaid
+flowchart TD
+    A[Question + active document] --> B[Build retrieval workflow plan]
+    B --> C[Classify question type]
+    B --> D[Extract focus phrase and focus terms]
+    B --> E[Generate weighted query variants]
+
+    E --> F[Text retrieval branch]
+    E --> G[Vector retrieval branch]
+
+    F --> F1[BM25 over contextualized chunks]
+    F --> F2[Lexical ranking over<br/>section, content, summary]
+
+    G --> G1[Embed query]
+    G1 --> G2[Cosine similarity against<br/>stored chunk embeddings]
+
+    F1 --> H[Merge candidate hits]
+    F2 --> H
+    G2 --> H
+
+    H --> I[Custom reranker]
+    I --> I1[Boost section-specific matches]
+    I --> I2[Boost definition-style evidence]
+    I --> I3[Penalize chapter boilerplate]
+    I --> I4[Penalize OCR junk and visual noise]
+    I --> I5[Select diverse non-duplicate chunks]
+
+    I1 --> J[Top grounded chunks]
+    I2 --> J
+    I3 --> J
+    I4 --> J
+    I5 --> J
+
+    J --> K[Build retrieved context + source appendix]
+    K --> L[Send grounded context to tutor model]
+```
+
+### Retrieval Logic in Plain English
+
+1. Samjhao first turns one learner question into multiple search variants instead of relying on a single raw query.
+2. It searches over contextualized chunk text, not just raw OCR output.
+3. If embeddings are configured, it adds a semantic retrieval branch on top of lexical search.
+4. It merges both branches into one candidate set.
+5. It reranks candidates using study-note-aware heuristics.
+6. It keeps the final chunk set small, relevant, and diverse before sending it to the tutor.
 
 ### Query Planning
 
@@ -281,4 +392,3 @@ data/
 - more retrieval diagnostics in the UI
 - broader source support beyond PDFs
 - deeper learner-personalization flows
-
