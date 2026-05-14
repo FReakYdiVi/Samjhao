@@ -107,40 +107,26 @@ When a learner asks a question, Samjhao:
 
 This is the full product flow, including where each Sarvam capability fits.
 
-```mermaid
-flowchart LR
-    A[User enters workspace] --> B{Input type}
+![Samjhao end-to-end pipeline](public/samjhao-pipeline.svg)
 
-    B -->|PDF upload| C[Sarvam Vision<br/>document intelligence]
-    C --> D[Clean markdown<br/>remove OCR noise]
-    D --> E[Derive sections and chunks]
-    E --> F[Sarvam-30B<br/>chunk contextualization]
-    F --> G[Optional embeddings<br/>Google or OpenAI-compatible]
-    G --> H[Store documents, chunks,<br/>embeddings, and sessions in SQLite]
+### Example Walkthrough
 
-    B -->|Voice question| I[Saaras v3<br/>speech-to-text]
-    I --> J[Transcript + learner profile]
+Imagine a Class 9 learner uploads a gravitation chapter PDF and asks:
 
-    B -->|Typed question| J
-    H --> K[Question arrives]
-    J --> K
+> "mujhe gravity simple words me samjhao"
 
-    K --> L[Sarvam-30B<br/>query planner]
-    L --> M[Hybrid retrieval over<br/>stored contextualized chunks]
-    M --> N[Sarvam-30B<br/>grounded tutor answer]
-    N --> O{Language shaping needed?}
+What happens:
 
-    O -->|Hindi or Hinglish compliance| P[Mayura v1<br/>translation / localization]
-    O -->|Roman output for Hinglish| Q[Sarvam transliteration API]
-    O -->|Speech playback| R[Bulbul v3<br/>text-to-speech]
-
-    P --> S[Final structured response]
-    Q --> S
-    R --> S
-    N --> S
-
-    S --> T[UI shows answer,<br/>citations, snippets, follow-ups]
-```
+1. `Sarvam Vision` extracts the PDF into usable markdown.
+2. Samjhao cleans the text, creates chunks, and stores them in the notebook.
+3. `Sarvam-30B` adds context to those chunks so retrieval has richer text to search.
+4. If the learner speaks instead of typing, `Saaras v3` first converts the audio into text.
+5. `Sarvam-30B` plans the search query.
+6. Samjhao retrieves the most relevant gravitation chunks.
+7. `Sarvam-30B` writes the grounded answer from those chunks.
+8. If stricter Hindi or Hinglish output is needed, `Mayura v1` reshapes the language.
+9. If the learner wants Roman-script Hinglish, the Sarvam transliteration API converts the output.
+10. If playback is enabled, `Bulbul v3` turns the final answer into audio.
 
 ### Sarvam Usage by Step
 
@@ -172,42 +158,24 @@ The retriever is one of the most important parts of the project.
 
 This is the internal retrieval pipeline that turns a learner question into the grounded context used by the tutor.
 
-```mermaid
-flowchart TD
-    A[Question + active document] --> B[Build retrieval workflow plan]
-    B --> C[Classify question type]
-    B --> D[Extract focus phrase and focus terms]
-    B --> E[Generate weighted query variants]
+![Samjhao retrieval workflow](public/samjhao-retrieval-workflow.svg)
 
-    E --> F[Text retrieval branch]
-    E --> G[Vector retrieval branch]
+### Retrieval Example
 
-    F --> F1[BM25 over contextualized chunks]
-    F --> F2[Lexical ranking over<br/>section, content, summary]
+For the same question, "mujhe gravity simple words me samjhao", the retriever does not search only for the exact sentence.
 
-    G --> G1[Embed query]
-    G1 --> G2[Cosine similarity against<br/>stored chunk embeddings]
+It may search using several variants such as:
 
-    F1 --> H[Merge candidate hits]
-    F2 --> H
-    G2 --> H
+- `gravity simple explanation`
+- `gravitation meaning`
+- `what is gravity`
+- `gravity force earth objects`
 
-    H --> I[Custom reranker]
-    I --> I1[Boost section-specific matches]
-    I --> I2[Boost definition-style evidence]
-    I --> I3[Penalize chapter boilerplate]
-    I --> I4[Penalize OCR junk and visual noise]
-    I --> I5[Select diverse non-duplicate chunks]
+That helps Samjhao find the right chunk even when:
 
-    I1 --> J[Top grounded chunks]
-    I2 --> J
-    I3 --> J
-    I4 --> J
-    I5 --> J
-
-    J --> K[Build retrieved context + source appendix]
-    K --> L[Send grounded context to tutor model]
-```
+- the learner asks in Hinglish
+- the chapter heading says `Gravitation`
+- the best source sentence uses textbook wording instead of the learner's wording
 
 ### Retrieval Logic in Plain English
 
