@@ -35,6 +35,15 @@
 
 ![Samjhao workspace](public/samjhao-workspace.png)
 
+## Samjhao Empowers You To
+
+- Ask from your own sources and stay grounded instead of drifting into generic chat
+- Study in Hindi, Hinglish, or English without forcing the source and question into one language
+- Turn scanned or OCR-heavy PDFs into a usable notebook workspace
+- Search intelligently across your notes with hybrid retrieval
+- Chat with context powered by retrieved source evidence
+- Use voice input and audio playback for a more natural learning loop
+
 ## Why Samjhao
 
 Most study assistants assume clean English input, clean digital documents, and a user who asks questions in the same language as the source.
@@ -59,6 +68,30 @@ Samjhao is built for a more realistic flow:
 | Inline source snippets and citations | Yes | Inconsistent |
 | Voice input and playback | Yes | Usually fragmented |
 | Local workspace persistence | Yes | Often session-only |
+
+## Why We Chose Sarvam Over Gemini For This Prototype
+
+First, a naming note: I could not verify an official Google model called `Gemini 3.1 Pro` on the Gemini API model page. Google currently lists `Gemini 2.5 Pro` as its advanced general-purpose Pro model, while `Gemini 3.1` appears on the audio side as `Gemini 3.1 Flash Live Preview` and `Gemini 3.1 Flash TTS Preview`. For that reason, the comparison below uses `Gemini 2.5 Pro` for Google’s current flagship Pro model, and references `Gemini 3 Pro` only where Sarvam’s own benchmark posts explicitly use that comparator.
+
+| Dimension | Sarvam | Gemini |
+| --- | --- | --- |
+| Official current positioning | Sarvam exposes an India-first stack across chat, speech, translation, TTS, and document intelligence | Google’s official Gemini model page lists `Gemini 2.5 Pro` as the advanced Pro model; it does not list a `Gemini 3.1 Pro` model |
+| Indian language focus | Sarvam-30B is explicitly optimized for Indian languages and supports native-script, romanized, and code-mixed inputs | Gemini 2.5 Pro is positioned as a strong general multimodal reasoning model, but the official model page does not frame it as India-specific |
+| Indian-language LLM benchmark claim | Sarvam-30B says it wins 89% of pairwise comparisons on Indian-language benchmarks and 87% on STEM, math, and coding | Google’s Gemini 2.5 Pro page highlights reasoning and multimodal capability, but does not publish an equivalent India-focused native/romanized benchmark claim on that page |
+| Indic OCR benchmark | On Sarvam Indic OCR Bench, Sarvam Vision scores above Gemini 3 Pro on Hindi, Bengali, Tamil, Telugu, Marathi, Malayalam, Kannada, Punjabi, Gujarati, Urdu, and many other Indian languages | Sarvam’s published OCR benchmark shows Gemini 3 Pro below Sarvam Vision on those language slices |
+| Indic speech benchmark | Saaras V3 reports 19.31% WER on the 10-language IndicVoices subset and Sarvam says it maintains a margin over Gemini 3 Pro and other ASR systems in that setup | Google’s official Gemini model page does not publish an India-focused IndicVoices ASR result for the Pro model |
+| Fit for this repo | Matches the exact stack Samjhao needs: OCR, code-mixed ASR, grounded chat, translation/localization, transliteration, and TTS | Strong general model family, but this prototype is centered on Indian-language documents, code-mixed speech, and Hindi/Hinglish output quality |
+
+### The Short Reason
+
+Samjhao is not choosing Sarvam because it is universally better at every possible task. It is choosing Sarvam because this product lives in a very specific problem space:
+
+- Indian learners asking in Hindi, Hinglish, and mixed speech
+- source material that often arrives as scanned or noisy PDFs
+- output that must remain grounded while still sounding natural in Indian languages
+- voice, OCR, transliteration, and localization all matter, not just chat quality
+
+For that shape of product, Sarvam is the more natural stack choice because the repo already depends on an India-focused model family across the entire pipeline instead of using one general-purpose model and stitching several Indian-language-specific gaps around it.
 
 ## Core Features
 
@@ -250,6 +283,42 @@ This keeps the UI grounded, easier to render, and ready for both reading and pla
 - shadcn/ui
 - better-sqlite3
 - Sarvam JavaScript SDK
+
+## Benchmark Snapshot
+
+These are the benchmark signals most relevant to this repo’s use case.
+
+| Area | Signal |
+| --- | --- |
+| LLM for Indian languages | Sarvam-30B reports 89% wins in pairwise Indian-language comparisons and 87% on STEM, math, and coding |
+| Native + romanized support | Sarvam-30B is documented as supporting native script, romanized, and code-mixed Indian language inputs |
+| Indic OCR | Sarvam Vision beats Gemini 3 Pro on the published Sarvam Indic OCR Bench in Hindi (95.91 vs 95.12), Bengali (92.61 vs 90.79), Tamil (93.42 vs 92.73), Telugu (87.70 vs 85.32), and several other languages |
+| Indic ASR | Saaras V3 reports 19.31% WER on the 10-language IndicVoices subset and supports 22 Indian languages plus English |
+
+## What This Prototype Is Today
+
+Right now, Samjhao is a small but real prototype:
+
+- Next.js app router frontend
+- local file-backed document storage
+- SQLite for documents, chunks, and chats
+- in-process ingestion and retrieval
+- single-app deployment shape
+
+That is a good prototype architecture because it keeps iteration fast while proving the user experience, retrieval quality, and India-first language flow.
+
+## How We Would Scale It
+
+If this moved beyond prototype stage, the next steps would be:
+
+- move uploaded files and extracted artifacts to object storage
+- replace local SQLite with a managed database
+- push ingestion, OCR, chunking, and embedding generation into background jobs
+- add a queue for document processing and voice transcription workloads
+- store embeddings in a proper vector index once corpus size grows
+- introduce user auth, tenant isolation, and per-workspace quotas
+- add caching, observability, retry logic, and rate-limit protection around model calls
+- separate the tutoring API from the web app into independently scalable services
 
 ## Quick Start
 
