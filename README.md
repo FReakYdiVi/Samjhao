@@ -422,14 +422,6 @@ data/
 - chat sessions are tied to a selected source
 - answers are grounded to retrieved chunks from that source
 
-## Where This Can Grow
-
-- stronger document previews and section inspection
-- richer citation rendering
-- more retrieval diagnostics in the UI
-- broader source support beyond PDFs
-- deeper learner-personalization flows
-
 ## Problems We Faced While Building Samjhao
 
 This app looks simple from the outside, but the hard part was never just "upload a PDF and chat with it." The real difficulty was building something that works for Indian learners as they actually are, not as a clean benchmark assumes they are.
@@ -555,7 +547,23 @@ Samjhao could become a grounded, multilingual notebook system for Indian users a
 
 The core idea would stay the same: upload source material, ask in the language you are comfortable with, and get a grounded explanation adapted to your context.
 
-### 1. Scale the ingestion layer first
+### 1. Expand beyond Hindi, Hinglish, and English
+
+Right now, this prototype is intentionally focused on Hindi, Hinglish, and English because that was the fastest way to prove the product loop clearly.
+
+But to truly become a notebook system for India, the product should feel natural for many more Indian users across native languages and backgrounds.
+
+That means scaling toward:
+
+- support for more Indian languages such as Marathi, Bengali, Tamil, Telugu, Gujarati, Punjabi, Malayalam, Kannada, Odia, and others
+- source-grounded answering across native-script and romanized inputs
+- UI copy, onboarding, labels, prompts, and examples that feel familiar to Indian users instead of feeling imported from generic English-first products
+- language-aware defaults so a user does not need to manually configure everything before the product feels usable
+- better voice and transliteration flows for users who speak one language, type another way, and read in a third form
+
+In other words, the scaling problem is not only "add more languages." It is also "make the full notebook experience feel locally usable for Indian users from the first screen onward."
+
+### 2. Scale the ingestion layer first
 
 If this becomes a real platform, document ingestion should move out of the web request path.
 
@@ -569,7 +577,7 @@ The right direction is:
 
 This makes the system much more reliable once uploads and document counts grow.
 
-### 2. Move from local persistence to platform persistence
+### 3. Move from local persistence to platform persistence
 
 Today, SQLite is enough. At scale, we would want:
 
@@ -580,7 +588,7 @@ Today, SQLite is enough. At scale, we would want:
 
 That turns the notebook from a local demo into a durable multi-user system.
 
-### 3. Build a richer grounding layer
+### 4. Build a richer grounding layer
 
 To become "NotebookLM for Indian locals," grounding has to become stronger and more flexible.
 
@@ -601,7 +609,7 @@ The system should be able to say:
 
 That honesty becomes more important as use cases become more serious.
 
-### 4. Support many user backgrounds, not just one student profile
+### 5. Support many user backgrounds, not just one student profile
 
 Right now the learner profile is simple. At scale, user background should become a first-class part of the system.
 
@@ -616,7 +624,7 @@ For example:
 
 The answer should stay grounded to the same source, but the explanation frame should adapt to the person reading it.
 
-### 5. Personalize grounding by profession and use case
+### 6. Personalize grounding by profession and use case
 
 This is one of the most important long-term opportunities.
 
@@ -640,7 +648,7 @@ For example, the same PDF paragraph about inflation could be explained as:
 
 The source evidence can stay the same, but the explanation wrapper changes.
 
-### 6. Add domain-specific notebook modes
+### 7. Add domain-specific notebook modes
 
 A strong way to scale this product is to introduce specialized grounded notebook modes.
 
@@ -663,7 +671,7 @@ Each mode could keep the same underlying architecture but swap:
 
 This would make the system useful beyond a single education demo.
 
-### 7. Improve multilingual evaluation, not just multilingual support
+### 8. Improve multilingual evaluation, not just multilingual support
 
 A real India-first product needs India-first evaluation.
 
@@ -679,7 +687,7 @@ That means measuring:
 
 Without this, a product may look multilingual in demos while still failing in real-world use.
 
-### 8. Add human feedback loops
+### 9. Add human feedback loops
 
 To scale responsibly, the system should learn from user interactions.
 
@@ -694,7 +702,7 @@ Useful signals would include:
 
 This kind of product feedback is critical for making grounded tutoring better over time.
 
-### 9. Build for reliability, not only demo quality
+### 10. Build for reliability, not only demo quality
 
 A real production version would need:
 
